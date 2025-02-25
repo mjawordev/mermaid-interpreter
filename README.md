@@ -1,6 +1,6 @@
-# 🔄 Modern Mermaid Interpreter
+# One HTML page Modern Mermaid Interpreter
 
-> 📊 A beautiful, modern web application for creating, visualizing, and sharing Mermaid diagrams with ease!
+Modern web application for creating, visualizing, and sharing Mermaid diagrams with ease!
 
 ![Modern Mermaid Interpreter](https://img.shields.io/badge/Status-Active-brightgreen)
 ![Version](https://img.shields.io/badge/Version-1.0-blue)
