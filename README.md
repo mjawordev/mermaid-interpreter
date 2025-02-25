@@ -90,7 +90,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - [Mermaid.js](https://mermaid.js.org/) for the amazing diagramming library
 - All contributors and users of this tool
-
----
-
-Made with ❤️ by [Your Name]
