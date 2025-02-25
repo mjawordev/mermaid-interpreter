@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Mermaid Interpreter</title>
+    <!-- Import Mermaid from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+    <!-- Import Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary-color: #f3f4f6;
+            --text-color: #1f2937;
+            --text-light: #6b7280;
+            --border-color: #e5e7eb;
+            --background-color: #ffffff;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --border-radius: 0.375rem;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .app-header {
+            padding: 16px 24px;
+            background-color: white;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .app-title h1 {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .app-title .logo {
+            color: var(--primary-color);
+            font-size: 24px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 64px);
+            overflow: hidden;
+        }
+
+        .code-input {
+            width: 30%;
+            min-width: 250px;
+            background: white;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            resize: horizontal;
+            overflow: auto;
+            transition: var(--transition);
+        }
+
+        .code-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        .code-body {
+            flex: 1;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        textarea {
+            flex: 1;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            transition: var(--transition);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+        }
+
+        .preview {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .preview-header {
+            padding: 16px;
+            background-color: white;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        .preview-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .preview-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background-color: white;
+        }
+
+        .diagram-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: auto;
+            padding: 24px;
+        }
+
+        .diagram-wrapper {
+            position: relative;
+            transform-origin: center center;
+        }
+
+        .control-btn {
+            background-color: white;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .control-btn:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--text-light);
+        }
+
+        .control-btn.primary {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .control-btn.primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .control-btn.icon-only {
+            padding: 8px;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            justify-content: center;
+        }
+
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown select {
+            appearance: none;
+            padding: 8px 36px 8px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background-color: white;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .dropdown::after {
+            content: '\f107';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: var(--text-light);
+        }
+
+        .dropdown select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+        }
+
+        .error-message {
+            color: var(--error-color);
+            margin-top: 16px;
+            padding: 12px;
+            background-color: rgba(231, 76, 60, 0.1);
+            border-radius: var(--border-radius);
+            display: none;
+            font-size: 14px;
+        }
+
+        .toggle-sidebar {
+            display: none;
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 100;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            box-shadow: var(--shadow-md);
+            cursor: pointer;
+            font-size: 18px;
+            transition: var(--transition);
+        }
+
+        .toggle-sidebar:hover {
+            background-color: var(--primary-hover);
+            transform: scale(1.05);
+        }
+
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 4px;
+        }
+
+        .zoom-btn {
+            background: none;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-color);
+            transition: var(--transition);
+        }
+
+        .zoom-btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .zoom-level {
+            font-size: 14px;
+            color: var(--text-color);
+            min-width: 60px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: rgba(33, 37, 41, 0.9);
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 24px;
+            text-align: center;
+            color: var(--text-light);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            max-width: 400px;
+            margin-bottom: 24px;
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            width: auto;
+            background-color: var(--text-color);
+            color: white;
+            text-align: center;
+            border-radius: var(--border-radius);
+            padding: 5px 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+            font-size: 0.8rem;
+            pointer-events: none;
+        }
+
+        #notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: var(--border-radius);
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            box-shadow: var(--shadow-md);
+            transition: opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .app-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .code-input {
+                position: fixed;
+                left: -100%;
+                width: 100%;
+                z-index: 50;
+                height: calc(100vh - 64px);
+                transition: left 0.3s ease;
+            }
+            
+            .code-input.show {
+                left: 0;
+            }
+            
+            .toggle-sidebar {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .dropdown select {
+                width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="app-header">
+            <div class="app-title">
+                <i class="fas fa-project-diagram logo"></i>
+                <h1>Mermaid Interpreter</h1>
+            </div>
+            <div class="controls">
+                <div class="dropdown">
+                    <select id="examples">
+                        <option value="">Select an example...</option>
+                        <option value="flowchart">Flowchart</option>
+                        <option value="sequence">Sequence Diagram</option>
+                        <option value="class">Class Diagram</option>
+                        <option value="state">State Diagram</option>
+                        <option value="gantt">Gantt Chart</option>
+                        <option value="pie">Pie Chart</option>
+                        <option value="er">Entity Relationship</option>
+                        <option value="mindmap">Mindmap</option>
+                        <option value="journey">Journey</option>
+                        <option value="gitgraph">Git Graph</option>
+                        <option value="timeline">Timeline</option>
+                    </select>
+                </div>
+                <button id="render-btn" class="control-btn primary">
+                    <i class="fas fa-play"></i> Render
+                </button>
+                <button id="clear-btn" class="control-btn">
+                    <i class="fas fa-trash-alt"></i> Clear
+                </button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="code-input">
+                <div class="code-header">
+                    <h2>Mermaid Code</h2>
+                </div>
+                <div class="code-body">
+                    <textarea id="code-area" placeholder="Enter your Mermaid code here..."></textarea>
+                    <div id="error-message" class="error-message"></div>
+                </div>
+            </div>
+
+            <div class="preview">
+                <div class="preview-header">
+                    <h2>Preview</h2>
+                    <div class="preview-controls">
+                        <div class="zoom-controls">
+                            <button id="zoom-out" class="zoom-btn">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <span id="zoom-level" class="zoom-level">100%</span>
+                            <button id="zoom-in" class="zoom-btn">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <button id="reset-zoom" class="zoom-btn">
+                                <i class="fas fa-redo-alt"></i>
+                            </button>
+                        </div>
+                        <div class="tooltip">
+                            <button id="copy-btn" class="control-btn icon-only">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <span class="tooltiptext">Copy diagram to clipboard</span>
+                        </div>
+                        <div class="tooltip">
+                            <button id="download-btn" class="control-btn icon-only">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <span class="tooltiptext">Download diagram as PNG</span>
+                        </div>
+                        <button id="fullscreen-btn" class="control-btn icon-only">
+                            <i class="fas fa-expand-arrows-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="preview-container">
+                    <div id="diagram-container" class="diagram-container">
+                        <div id="diagram-wrapper" class="diagram-wrapper">
+                            <div id="output"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button id="toggle-sidebar" class="toggle-sidebar">
+        <i class="fas fa-code"></i>
+    </button>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({ 
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose'
+        });
+
+        // Example templates
+        const examples = {
+            flowchart: `flowchart TD
+    A[Start] --> B{Is it working?}
+    B -->|Yes| C[Great!]
+    B -->|No| D[Debug]
+    D --> B`,
+            sequence: `sequenceDiagram
+    participant Alice
+    participant Bob
+    Alice->>John: Hello John, how are you?
+    John-->>Alice: Great!
+    John->>Bob: How about you?
+    Bob-->>John: Jolly good!`,
+            class: `classDiagram
+    class Animal {
+        +name: string
+        +eat(): void
+        +sleep(): void
+    }
+    class Dog {
+        +bark(): void
+    }
+    Animal <|-- Dog`,
+            state: `stateDiagram-v2
+    [*] --> Still
+    Still --> [*]
+    Still --> Moving
+    Moving --> Still
+    Moving --> Crash
+    Crash --> [*]`,
+            gantt: `gantt
+    title A Gantt Diagram
+    dateFormat  YYYY-MM-DD
+    section Section
+    A task           :a1, 2023-01-01, 30d
+    Another task     :after a1, 20d
+    section Another
+    Task in sec      :2023-01-12, 12d`,
+            pie: `pie title Favorite Languages
+    "JavaScript" : 30
+    "Python" : 25
+    "Java" : 20
+    "Other" : 25`,
+            er: `erDiagram
+    CUSTOMER ||--o{ ORDER : places
+    ORDER ||--|{ LINE-ITEM : contains
+    CUSTOMER }|..|{ DELIVERY-ADDRESS : uses`,
+            mindmap: `mindmap
+    root((Mindmap))
+        Origins
+            Long history
+            ::icon(fa fa-book)
+            Popularisation
+                British popular psychology author Tony Buzan
+        Research
+            On effectiveness<br/>and features
+            On Automatic creation
+                Uses
+                    Creative techniques
+                    Strategic planning
+                    Argument mapping
+        Tools
+            Pen and paper
+            Mermaid`,
+            journey: `journey
+    title My working day
+    section Go to work
+      Make tea: 5: Me
+      Go upstairs: 3: Me
+      Do work: 1: Me, Cat
+    section Go home
+      Go downstairs: 5: Me
+      Sit down: 5: Me`,
+            gitgraph: `gitGraph
+    commit
+    branch develop
+    checkout develop
+    commit
+    commit
+    checkout main
+    merge develop
+    commit
+    commit`,
+            timeline: `timeline
+    title History of Social Media
+    2002 : LinkedIn
+    2004 : Facebook
+         : Google
+    2005 : Youtube
+    2006 : Twitter`
+        };
+
+        // DOM elements
+        const examplesDropdown = document.getElementById('examples');
+        const codeArea = document.getElementById('code-area');
+        const renderBtn = document.getElementById('render-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const output = document.getElementById('output');
+        const errorMessage = document.getElementById('error-message');
+        const toggleSidebar = document.getElementById('toggle-sidebar');
+        const codeInput = document.querySelector('.code-input');
+        const zoomIn = document.getElementById('zoom-in');
+        const zoomOut = document.getElementById('zoom-out');
+        const zoomLevel = document.getElementById('zoom-level');
+        const resetZoom = document.getElementById('reset-zoom');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const previewContainer = document.querySelector('.preview-container');
+        const diagramContainer = document.getElementById('diagram-container');
+        const diagramWrapper = document.getElementById('diagram-wrapper');
+        const copyBtn = document.getElementById('copy-btn');
+        const downloadBtn = document.getElementById('download-btn');
+
+        // Zoom control variables
+        let currentZoom = 1;
+        const minZoom = 0.25;
+        const maxZoom = 4;
+        const zoomStep = 0.25;
+
+        // Update zoom display
+        function updateZoomLevel() {
+            zoomLevel.textContent = `${Math.round(currentZoom * 100)}%`;
+            diagramWrapper.style.transform = `scale(${currentZoom})`;
+        }
+
+        // Auto-fit diagram to the preview container
+        function autoFitDiagram() {
+            // Get the diagram element
+            const diagram = output.querySelector('svg');
+            if (!diagram) return;
+
+            // Reset any previous transformations
+            diagramWrapper.style.transform = 'scale(1)';
+            diagram.style.transform = 'none';
+            
+            // Get container dimensions
+            const containerWidth = diagramContainer.clientWidth - 48; // Subtract padding
+            const containerHeight = diagramContainer.clientHeight - 48;
+
+            // Get diagram dimensions
+            const diagramWidth = diagram.getBBox().width;
+            const diagramHeight = diagram.getBBox().height;
+
+            // Calculate the scale factor to fit the diagram
+            let scaleFactor = Math.min(
+                containerWidth / diagramWidth,
+                containerHeight / diagramHeight
+            ) * 0.9; // Add a small margin
+
+            // Limit scale factor to reasonable bounds
+            scaleFactor = Math.max(minZoom, Math.min(maxZoom, scaleFactor));
+
+            // Apply the scale
+            currentZoom = scaleFactor;
+            updateZoomLevel();
+        }
+
+        // Zoom in
+        zoomIn.addEventListener('click', () => {
+            currentZoom += zoomStep;
+            if (currentZoom > maxZoom) currentZoom = maxZoom;
+            updateZoomLevel();
+        });
+
+        // Zoom out
+        zoomOut.addEventListener('click', () => {
+            currentZoom -= zoomStep;
+            if (currentZoom < minZoom) currentZoom = minZoom;
+            updateZoomLevel();
+        });
+
+        // Reset zoom
+        resetZoom.addEventListener('click', () => {
+            currentZoom = 1;
+            updateZoomLevel();
+        });
+
+        // Toggle fullscreen
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                previewContainer.requestFullscreen().catch(err => {
+                    console.error(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        // Toggle sidebar on mobile
+        toggleSidebar.addEventListener('click', () => {
+            codeInput.classList.toggle('show');
+        });
+
+        // Load example
+        examplesDropdown.addEventListener('change', function() {
+            const selectedExample = this.value;
+            if (selectedExample && examples[selectedExample]) {
+                codeArea.value = examples[selectedExample];
+                renderDiagram();
+            }
+        });
+
+        // Render diagram
+        function renderDiagram() {
+            const code = codeArea.value.trim();
+            errorMessage.style.display = 'none';
+            
+            if (!code) {
+                output.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-project-diagram"></i>
+                        <p>Enter Mermaid code and click "Render" to visualize your diagram</p>
+                        <button id="example-btn" class="control-btn">
+                            <i class="fas fa-lightbulb"></i> Try an example
+                        </button>
+                    </div>
+                `;
+                
+                // Add event listener to the example button
+                document.getElementById('example-btn').addEventListener('click', () => {
+                    examplesDropdown.focus();
+                    examplesDropdown.click();
+                });
+                
+                return;
+            }
+
+            try {
+                output.innerHTML = `<div class="mermaid">${code}</div>`;
+                mermaid.init(undefined, document.getElementsByClassName('mermaid'));
+                
+                // Auto-fit the diagram after rendering
+                setTimeout(autoFitDiagram, 100); // Small delay to ensure diagram is fully rendered
+                
+                // Hide sidebar on mobile after rendering
+                if (window.innerWidth <= 768) {
+                    codeInput.classList.remove('show');
+                }
+            } catch (error) {
+                errorMessage.textContent = `Error: ${error.message}`;
+                errorMessage.style.display = 'block';
+                output.innerHTML = `
+                    <div class="empty-state" style="color: var(--error-color);">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Failed to render diagram. Check your syntax.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Pan functionality for the diagram container
+        let isPanning = false;
+        let startX, startY, startScrollLeft, startScrollTop;
+
+        diagramContainer.addEventListener('mousedown', (e) => {
+            if (e.target === diagramContainer || e.target === diagramWrapper || e.target === output) {
+                isPanning = true;
+                diagramContainer.style.cursor = 'grabbing';
+                startX = e.pageX;
+                startY = e.pageY;
+                startScrollLeft = diagramContainer.scrollLeft;
+                startScrollTop = diagramContainer.scrollTop;
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isPanning) return;
+            e.preventDefault();
+            const x = e.pageX;
+            const y = e.pageY;
+            const walkX = (x - startX) * 1.5;
+            const walkY = (y - startY) * 1.5;
+            diagramContainer.scrollLeft = startScrollLeft - walkX;
+            diagramContainer.scrollTop = startScrollTop - walkY;
+        });
+
+        document.addEventListener('mouseup', () => {
+            isPanning = false;
+            diagramContainer.style.cursor = 'auto';
+        });
+
+        // Mouse wheel zoom
+        diagramContainer.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                if (e.deltaY < 0 && currentZoom < maxZoom) {
+                    currentZoom += zoomStep;
+                } else if (e.deltaY > 0 && currentZoom > minZoom) {
+                    currentZoom -= zoomStep;
+                }
+                updateZoomLevel();
+            }
+        });
+
+        // Event listeners
+        renderBtn.addEventListener('click', renderDiagram);
+        
+        // Auto-render when text field loses focus
+        codeArea.addEventListener('blur', renderDiagram);
+        
+        clearBtn.addEventListener('click', function() {
+            codeArea.value = '';
+            output.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-project-diagram"></i>
+                    <p>Enter Mermaid code and click "Render" to visualize your diagram</p>
+                    <button id="example-btn" class="control-btn">
+                        <i class="fas fa-lightbulb"></i> Try an example
+                    </button>
+                </div>
+            `;
+            
+            // Add event listener to the example button
+            document.getElementById('example-btn').addEventListener('click', () => {
+                examplesDropdown.focus();
+                examplesDropdown.click();
+            });
+            
+            examplesDropdown.selectedIndex = 0;
+            errorMessage.style.display = 'none';
+        });
+
+        // Auto-render when pressing Ctrl+Enter
+        codeArea.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                renderDiagram();
+            }
+        });
+
+        // Handle window resize for responsive auto-fit
+        window.addEventListener('resize', function() {
+            if (output.querySelector('svg')) {
+                autoFitDiagram();
+            }
+        });
+
+        // Initial render message
+        output.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-project-diagram"></i>
+                <p>Enter Mermaid code and click "Render" to visualize your diagram</p>
+                <button id="example-btn" class="control-btn">
+                    <i class="fas fa-lightbulb"></i> Try an example
+                </button>
+            </div>
+        `;
+        
+        // Add event listener to the example button
+        document.getElementById('example-btn').addEventListener('click', () => {
+            examplesDropdown.focus();
+            examplesDropdown.click();
+        });
+
+        // Function to download diagram as PNG
+        function downloadDiagram() {
+            const svg = output.querySelector('svg');
+            if (!svg) {
+                showNotification('No diagram to download', 'error');
+                return;
+            }
+
+            try {
+                // Create a canvas element
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Get SVG dimensions and clone it to avoid modifying the original
+                const svgClone = svg.cloneNode(true);
+                const svgSize = svg.getBoundingClientRect();
+                
+                // Set canvas size with some padding
+                const padding = 20;
+                canvas.width = svgSize.width + padding * 2;
+                canvas.height = svgSize.height + padding * 2;
+                
+                // Add XML namespace if not present
+                if (!svgClone.getAttribute('xmlns')) {
+                    svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                }
+                
+                // Add width and height if needed
+                svgClone.setAttribute('width', svgSize.width);
+                svgClone.setAttribute('height', svgSize.height);
+                
+                // Serialize SVG to a data URL
+                const svgData = new XMLSerializer().serializeToString(svgClone);
+                const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                
+                // Create a data URL from the SVG blob
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        // Fill with white background
+                        ctx.fillStyle = 'white';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        
+                        // Draw the image in the center of the canvas
+                        ctx.drawImage(img, padding, padding, svgSize.width, svgSize.height);
+                        
+                        // Convert to PNG and download
+                        try {
+                            const pngUrl = canvas.toDataURL('image/png');
+                            const downloadLink = document.createElement('a');
+                            downloadLink.href = pngUrl;
+                            downloadLink.download = 'mermaid-diagram.png';
+                            document.body.appendChild(downloadLink);
+                            downloadLink.click();
+                            document.body.removeChild(downloadLink);
+                            
+                            showNotification('Diagram downloaded successfully', 'success');
+                        } catch (err) {
+                            console.error('Error creating PNG:', err);
+                            showNotification('Failed to create PNG', 'error');
+                            
+                            // Fallback: offer SVG download instead
+                            offerSvgDownload(svgClone);
+                        }
+                    };
+                    
+                    // Set the source of the image to the data URL
+                    img.src = e.target.result;
+                };
+                
+                reader.readAsDataURL(svgBlob);
+            } catch (error) {
+                console.error('Error downloading diagram:', error);
+                showNotification('Failed to download diagram', 'error');
+                
+                // Fallback to direct SVG download
+                const svg = output.querySelector('svg');
+                if (svg) {
+                    offerSvgDownload(svg);
+                }
+            }
+        }
+        
+        // Function to offer SVG download as fallback
+        function offerSvgDownload(svg) {
+            try {
+                // Ensure SVG has proper namespace
+                if (!svg.getAttribute('xmlns')) {
+                    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                }
+                
+                const svgData = new XMLSerializer().serializeToString(svg);
+                const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                const svgUrl = URL.createObjectURL(svgBlob);
+                
+                const downloadLink = document.createElement('a');
+                downloadLink.href = svgUrl;
+                downloadLink.download = 'mermaid-diagram.svg';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(svgUrl);
+                
+                showNotification('Diagram downloaded as SVG', 'success');
+            } catch (error) {
+                console.error('Error downloading SVG:', error);
+                showNotification('Failed to download diagram', 'error');
+            }
+        }
+
+        // Function to copy diagram to clipboard
+        function copyDiagramToClipboard() {
+            const svg = output.querySelector('svg');
+            if (!svg) {
+                showNotification('No diagram to copy', 'error');
+                return;
+            }
+
+            try {
+                // Try to copy as SVG directly (modern browsers)
+                const svgClone = svg.cloneNode(true);
+                
+                // Add XML namespace if not present
+                if (!svgClone.getAttribute('xmlns')) {
+                    svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                }
+                
+                const svgData = new XMLSerializer().serializeToString(svgClone);
+                const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                
+                // Try to copy the SVG blob directly
+                navigator.clipboard.write([
+                    new ClipboardItem({
+                        'image/svg+xml': svgBlob
+                    })
+                ]).then(() => {
+                    showNotification('Diagram copied to clipboard', 'success');
+                }).catch(err => {
+                    console.warn('Could not copy SVG directly:', err);
+                    
+                    // Fallback: Try to copy as text
+                    navigator.clipboard.writeText(svgData).then(() => {
+                        showNotification('Diagram copied as SVG code', 'success');
+                    }).catch(err => {
+                        console.error('Could not copy as text:', err);
+                        showNotification('Failed to copy diagram', 'error');
+                    });
+                });
+            } catch (error) {
+                console.error('Error copying diagram:', error);
+                showNotification('Failed to copy diagram', 'error');
+            }
+        }
+
+        // Function to show notification
+        function showNotification(message, type = 'info') {
+            // Create notification element if it doesn't exist
+            let notification = document.getElementById('notification');
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.id = 'notification';
+                document.body.appendChild(notification);
+            }
+            
+            // Set notification style based on type
+            if (type === 'success') {
+                notification.style.backgroundColor = 'var(--success-color)';
+            } else if (type === 'error') {
+                notification.style.backgroundColor = 'var(--error-color)';
+            } else {
+                notification.style.backgroundColor = 'var(--primary-color)';
+            }
+            
+            // Set message and show notification
+            notification.textContent = message;
+            notification.style.opacity = '1';
+            
+            // Hide notification after 3 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+            }, 3000);
+        }
+
+        // Add event listeners for buttons
+        copyBtn.addEventListener('click', copyDiagramToClipboard);
+        downloadBtn.addEventListener('click', downloadDiagram);
+    </script>
+</body>
+</html>
